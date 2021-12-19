@@ -12,6 +12,12 @@ public class CapacitorCalendar: CAPPlugin {
     let SEARCH_LIMIT_INTERVAL = 1000 * 24 * 60 * 60;
     
     let store = EKEventStore()
+    var globalCommit = false;
+    
+    @objc func startTransaction(_ call: CAPPluginCall) {
+        self.globalCommit = true;
+        call.resolve()
+    }
     
     @objc func createEvent(_ call: CAPPluginCall) {
         
@@ -22,7 +28,7 @@ public class CapacitorCalendar: CAPPlugin {
             return
         }
         
-        let commit = call.getBool("commit", true)
+        let commit = call.getBool("commit", self.globalCommit)
         
         let location = call.getString("location") ?? ""
 
@@ -107,7 +113,7 @@ public class CapacitorCalendar: CAPPlugin {
          }
          
          let location = call.getString("location") ?? ""
-
+        let commit = call.getBool("commit", self.globalCommit)
          let notes = call.getString("notes") ?? ""
 
          guard let startDate = call.getDouble("startDate"), startDate > 0 else {
@@ -154,7 +160,7 @@ public class CapacitorCalendar: CAPPlugin {
                 }
 
                 do {
-                    try self.store.save(event, span: .thisEvent)
+                    try self.store.save(event, span: .thisEvent, commit: commit)
                     call.resolve()
                 } catch let error as NSError {
                     let msg = "Failed to save event with error: \(error)"
@@ -213,26 +219,32 @@ public class CapacitorCalendar: CAPPlugin {
                     let matchingEvents = datedEvents.filtered(using: matches)
                     
                     let events = matchingEvents.map {
-                        (event: Any) -> [String: String?] in
+                        (event: Any) -> [String: Any?] in
                         
                         return [
                             "title": (event as! EKEvent).title,
                             "location": (event as! EKEvent).location,
                             "id": (event as! EKEvent).eventIdentifier,
                             "notes": (event as! EKEvent).notes,
+                            "startDate": (event as! EKEvent).startDate.timeIntervalSince1970,
+                            "endDate": (event as! EKEvent).endDate.timeIntervalSince1970,
+                            "allDay":(event as! EKEvent).isAllDay
                         ]
                     }
                     
                     call.resolve(["events": events])
                 } else {
                     let events = datedEvents.map{
-                        (event: Any) -> [String: String?] in
+                        (event: Any) -> [String: Any?] in
                         
                         return [
                             "title": (event as! EKEvent).title,
                             "location": (event as! EKEvent).location,
                             "id": (event as! EKEvent).eventIdentifier,
                             "notes": (event as! EKEvent).notes,
+                            "startDate": (event as! EKEvent).startDate.timeIntervalSince1970,
+                            "endDate": (event as! EKEvent).endDate.timeIntervalSince1970,
+                            "allDay":(event as! EKEvent).isAllDay
                         ]
                     }
                                           
@@ -258,7 +270,7 @@ public class CapacitorCalendar: CAPPlugin {
             return
         }
         
-        let commit = call.getBool("commit", false)
+        let commit = call.getBool("commit", self.globalCommit)
         
         store.requestAccess(to: .event) { (accessGranted: Bool, error: Error?) in
             if error == nil {
@@ -305,6 +317,7 @@ public class CapacitorCalendar: CAPPlugin {
                 "id": $0.calendarIdentifier,
                 "name": $0.title,
                 "displayName": $0.title,
+                "type": $0.type,
                 "defaultCalendar": false,
             ]}
         
@@ -312,6 +325,7 @@ public class CapacitorCalendar: CAPPlugin {
             "id": defaultCalendar!.calendarIdentifier,
             "name": defaultCalendar!.title,
             "displayName": defaultCalendar!.title,
+            "type": defaultCalendar!.type,
             "defaultCalendar": true,
         ], at: 0)
 
@@ -321,6 +335,7 @@ public class CapacitorCalendar: CAPPlugin {
     @objc func commit(_ call: CAPPluginCall) {
         do {
             try self.store.commit()
+            self.globalCommit = false;
             call.resolve()
         } catch let error as NSError {
             let msg = "Failed to commit calendar with error: \(error)"

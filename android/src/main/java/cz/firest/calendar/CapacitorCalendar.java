@@ -49,6 +49,8 @@ public class CapacitorCalendar extends Plugin {
     static final Integer RESULT_CODE_OPENCAL = 1;
     public static final String LOG_TAG = "Calendar";
 
+	public commitGlobal = false;
+
     protected enum KeyIndex {
         CALENDARS_ID,
         IS_PRIMARY,
@@ -56,6 +58,7 @@ public class CapacitorCalendar extends Plugin {
         CALENDARS_VISIBLE,
         CALENDARS_PRIMARY,
         CALENDARS_DISPLAY_NAME,
+		CALENDARS_TYPE,
         EVENTS_ID,
         EVENTS_CALENDAR_ID,
         EVENTS_DESCRIPTION,
@@ -93,6 +96,20 @@ public class CapacitorCalendar extends Plugin {
             }
         }
     }
+	
+	/* unused on android, but important for ios */
+	@PluginMethod()
+	public void startTransaction(PluginCall call) {
+		commitGlobal = true;
+		call.success();
+	}
+
+	/* unused on android, but important for ios */
+	@PluginMethod()
+	public void commit(PluginCall call) {
+		commitGlobal = false;
+		call.success();
+	}
 
     @PluginMethod()
     public void openCalendar(PluginCall call) {
@@ -451,6 +468,7 @@ public class CapacitorCalendar extends Plugin {
         keys.put(KeyIndex.CALENDARS_DISPLAY_NAME, Calendars.CALENDAR_DISPLAY_NAME);
         keys.put(KeyIndex.CALENDARS_VISIBLE, Calendars.VISIBLE);
         keys.put(KeyIndex.CALENDARS_PRIMARY, Calendars.IS_PRIMARY);
+		keys.put(KeyIndex.CALENDARS_TYPE, Calendars.ACCOUNT_TYPE);
         keys.put(KeyIndex.EVENTS_ID, Events._ID);
         keys.put(KeyIndex.EVENTS_CALENDAR_ID, Events.CALENDAR_ID);
         keys.put(KeyIndex.EVENTS_DESCRIPTION, Events.DESCRIPTION);
@@ -657,7 +675,8 @@ public class CapacitorCalendar extends Plugin {
                         this.getKey(KeyIndex.CALENDARS_ID),
                         this.getKey(KeyIndex.CALENDARS_PRIMARY),
                         this.getKey(KeyIndex.CALENDARS_NAME),
-                        this.getKey(KeyIndex.CALENDARS_DISPLAY_NAME)
+                        this.getKey(KeyIndex.CALENDARS_DISPLAY_NAME),
+						this.getKey(KeyIndex.CALENDARS_TYPE),
                 },
                 this.getKey(KeyIndex.CALENDARS_VISIBLE) + "=1", null, null);
 
@@ -669,6 +688,7 @@ public class CapacitorCalendar extends Plugin {
                 int primaryCol = cursor.getColumnIndex(this.getKey(KeyIndex.CALENDARS_PRIMARY));
                 int nameCol = cursor.getColumnIndex(this.getKey(KeyIndex.CALENDARS_NAME));
                 int displayNameCol = cursor.getColumnIndex(this.getKey(KeyIndex.CALENDARS_DISPLAY_NAME));
+				int type = cursor.getColumnIndex(this.getKey(KeyIndex.CALENDARS_TYPE));
 
                 if (primaryCol != -1) {
                     boolean defaultCalendar = false;
@@ -678,7 +698,7 @@ public class CapacitorCalendar extends Plugin {
                     }
 
                     Calendar data = new Calendar(cursor.getString(col), cursor.getString(nameCol),
-                      cursor.getString(displayNameCol), defaultCalendar);
+                      cursor.getString(displayNameCol), defaultCalendar, type);
                     availableCalendars.add(data);
                 }
             } while (cursor.moveToNext());
