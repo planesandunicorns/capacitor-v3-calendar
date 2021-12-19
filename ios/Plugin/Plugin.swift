@@ -306,6 +306,7 @@ public class CapacitorCalendar: CAPPlugin {
                 "name": $0.title,
                 "displayName": $0.title,
                 "defaultCalendar": false,
+                "type": $0.type.rawValue
             ]}
         
         calendars.insert([
@@ -313,6 +314,7 @@ public class CapacitorCalendar: CAPPlugin {
             "name": defaultCalendar!.title,
             "displayName": defaultCalendar!.title,
             "defaultCalendar": true,
+            "type": defaultCalendar!.type.rawValue
         ], at: 0)
 
         call.resolve(["availableCalendars": calendars]);
