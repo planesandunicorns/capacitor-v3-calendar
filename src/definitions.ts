@@ -1,9 +1,3 @@
-declare module "@capacitor/core" {
-  interface PluginRegistry {
-    CapacitorCalendar: CapacitorCalendarPlugin;
-  }
-}
-
 export interface CalendarEventOptions {
   id?: string;
   title?: string;
@@ -12,6 +6,7 @@ export interface CalendarEventOptions {
   startDate?: number;
   endDate?: number;
   calendarId?: string;
+  commit?: boolean
 }
 
 export interface DeleteEventOptions {
@@ -26,4 +21,5 @@ export interface CapacitorCalendarPlugin {
   deleteEventById(options: { id: string }): Promise<any>
   updateEvent(options: CalendarEventOptions): Promise<any>
   getAvailableCalendars(): Promise<any>
+  commit(): Promise<boolean>
 }
