@@ -308,6 +308,8 @@ public class CapacitorCalendar: CAPPlugin {
     }
     
     @objc func getAvailableCalendars(_ call: CAPPluginCall) {
+        CAPLog.print("Getting calendars");
+        
         let defaultCalendar = self.store.defaultCalendarForNewEvents
         
         var calendars = self.store.calendars(for: EKEntityType.event)
