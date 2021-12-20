@@ -40,12 +40,13 @@ export interface DeleteEventOptions {
 }
 
 export interface CapacitorCalendarPlugin {
-  openCalendar(options?: { date: number }): Promise<any>
-  createEvent(options: CalendarEventOptions): Promise<any>
-  findEvent(options: CalendarEventOptions): Promise<any>
-  deleteEvent(options: DeleteEventOptions): Promise<any>
-  deleteEventById(options: { id: string }): Promise<any>
-  updateEvent(options: CalendarEventOptions): Promise<any>
-  getAvailableCalendars(): Promise<{availableCalendars: Array<CalendarObject>}>
-  commit(): Promise<boolean>
+	startTransaction(): Promise<any>
+	openCalendar(options?: { date: number }): Promise<any>
+	createEvent(options: CalendarEventOptions): Promise<{result: "success", commit: boolean}>
+	findEvent(options: CalendarEventOptions): Promise<any>
+	deleteEvent(options: DeleteEventOptions): Promise<{result: "success", commit: boolean}>
+	deleteEventById(options: { id: string }): Promise<{result: "success", commit: boolean}>
+	updateEvent(options: CalendarEventOptions): Promise<{result: "success", commit: boolean}>
+	getAvailableCalendars(): Promise<{availableCalendars: Array<CalendarObject>}>
+	commit(): Promise<boolean>
 }

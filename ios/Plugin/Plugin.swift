@@ -12,6 +12,12 @@ public class CapacitorCalendar: CAPPlugin {
     let SEARCH_LIMIT_INTERVAL = 1000 * 24 * 60 * 60;
     
     let store = EKEventStore()
+    var commitGlobal = true;
+    
+    @objc func startTransaction(_ call: CAPPluginCall) {
+        self.commitGlobal = false;
+        call.resolve(["result": "success"])
+    }
     
     @objc func createEvent(_ call: CAPPluginCall) {
         
@@ -22,7 +28,7 @@ public class CapacitorCalendar: CAPPlugin {
             return
         }
         
-        let commit = call.getBool("commit", true)
+        let commitThis = call.getBool("commit", self.commitGlobal)
         
         let location = call.getString("location") ?? ""
 
@@ -41,14 +47,13 @@ public class CapacitorCalendar: CAPPlugin {
             call.reject(msg)
             return
         }
-
-       
-
+        
         
         let eventStartDate = Date(timeIntervalSince1970: startDate / 1000);
         
         store.requestAccess(to: .event) { (accessGranted: Bool, error: Error?) in
             if error == nil {
+                
                 var calendar = self.store.defaultCalendarForNewEvents
                 if let identifier = call.getString("calendarId") {
                     if let selectedCalendar = self.store.calendar(withIdentifier: identifier) {
@@ -74,8 +79,8 @@ public class CapacitorCalendar: CAPPlugin {
                 }
 
                 do {
-                    try self.store.save(event, span: .thisEvent, commit: commit)
-                    call.resolve()
+                    try self.store.save(event, span: .thisEvent, commit: commitThis)
+                    call.resolve(["result":"success", "commit": commitThis])
                 } catch let error as NSError {
                     let msg = "Failed to save event with error: \(error)"
                     print(msg)
@@ -107,7 +112,7 @@ public class CapacitorCalendar: CAPPlugin {
          }
          
          let location = call.getString("location") ?? ""
-
+         let commitThis = call.getBool("commit", self.commitGlobal)
          let notes = call.getString("notes") ?? ""
 
          guard let startDate = call.getDouble("startDate"), startDate > 0 else {
@@ -154,8 +159,8 @@ public class CapacitorCalendar: CAPPlugin {
                 }
 
                 do {
-                    try self.store.save(event, span: .thisEvent)
-                    call.resolve()
+                    try self.store.save(event, span: .thisEvent, commit: commitThis)
+                    call.resolve(["result":"success", "commit": commitThis])
                 } catch let error as NSError {
                     let msg = "Failed to save event with error: \(error)"
                     print(msg)
@@ -258,7 +263,7 @@ public class CapacitorCalendar: CAPPlugin {
             return
         }
         
-        let commit = call.getBool("commit", false)
+        let commit = call.getBool("commit", self.commitGlobal)
         
         store.requestAccess(to: .event) { (accessGranted: Bool, error: Error?) in
             if error == nil {
@@ -271,7 +276,7 @@ public class CapacitorCalendar: CAPPlugin {
                 
                 do {
                     try self.store.remove(event, span: .thisEvent, commit: commit);
-                    call.resolve()
+                    call.resolve(["result":"success", "commit": commit])
                 } catch let error as NSError {
                     let msg = "Failed to remove event with error: \(error)"
                     print(msg)
@@ -323,6 +328,7 @@ public class CapacitorCalendar: CAPPlugin {
     @objc func commit(_ call: CAPPluginCall) {
         do {
             try self.store.commit()
+            self.commitGlobal = true;
             call.resolve()
         } catch let error as NSError {
             let msg = "Failed to commit calendar with error: \(error)"
